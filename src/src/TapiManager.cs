@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.Threading;
 using JulMar.Atapi.Interop;
 using System.Globalization;
+using System.Threading.Tasks;
 
 [assembly: System.Security.AllowPartiallyTrustedCallers]
 
@@ -412,11 +413,10 @@ namespace JulMar.Atapi
         /// <summary>
         /// Processes the TAPI messages
         /// </summary>
-		private void ProcessTapiMessages()
+		private async void ProcessTapiMessages()
 		{
             var arrWait = new WaitHandle[] { _evtStop, _evtReceivedLineEvent, _evtReceivedPhoneEvent };
             var msg = new LINEMESSAGE();
-            ProcessTapiMessageDelegate ptmCb = ProcessTapiMessage;
 
             int rc = 0;
 
@@ -453,22 +453,18 @@ namespace JulMar.Atapi
                     // made a blocking call and is waiting on the result from this
                     // thread.. if the WinForms/WPF app then attempts to marshal to 
                     // the UI thread from this callback it will deadlock.
-                    ptmCb.BeginInvoke(msg, ar =>
-                        {
-                            try
-                            {
-                                ptmCb.EndInvoke(ar);
-                            }
-                            catch (Exception ex)
-                            {
-                                Trace.WriteLine("TAPI message exception: " + ex.Message);
-                            }
-                        }, null);
+
+                    try
+                    {
+                        await Task.Run(() => ProcessTapiMessage(msg));
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine("TAPI message exception: " + ex.Message);
+                    }
                 }
             }
 		}
-
-        delegate void ProcessTapiMessageDelegate(LINEMESSAGE msg);
 
         private void ProcessTapiMessage(LINEMESSAGE msg)
         {

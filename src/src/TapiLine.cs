@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using JulMar.Atapi.Interop;
 using System.Globalization;
+using System.Threading.Tasks;
 
 namespace JulMar.Atapi
 {
@@ -1681,18 +1682,7 @@ namespace JulMar.Atapi
                     (callPrivileges == NativeMethods.LINECALLPRIVILEGE_MONITOR) ? Privilege.Monitor : Privilege.Owner;
                 foreach (EventHandler<NewCallEventArgs> nc in NewCall.GetInvocationList())
                 {
-                    nc.BeginInvoke(this, new NewCallEventArgs(call, priv),
-                        delegate(IAsyncResult ar) 
-                        {
-                            try
-                            {
-                                var nce = (EventHandler<NewCallEventArgs>)ar.AsyncState;
-                                nce.EndInvoke(ar);
-                            }
-                            catch
-                            {
-                            }
-                        }, nc);
+                    Task.Run(() => nc.Invoke(this, new NewCallEventArgs(call, priv)));
                 }
             }
         }

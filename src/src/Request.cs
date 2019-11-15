@@ -17,6 +17,7 @@
 using System;
 using System.Threading;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace JulMar.Atapi
 {
@@ -65,8 +66,9 @@ namespace JulMar.Atapi
             Result = resultCode;
             _timeStarted.Stop();
             _asyncWaitHandle.Set();
+
             if (_callback != null)
-                _callback.BeginInvoke(this, ar => _callback.EndInvoke(ar), null);
+                Task.Run(() => _callback.Invoke(null));
         }
 
         /// <summary>
